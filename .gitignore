@@ -9,6 +9,7 @@ dock_build.bat
 ./db.db
 .vscode/launch.json
 *.log
+venv
 item
 static/cache
 static/wx_qrcode.png

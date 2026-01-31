@@ -124,6 +124,23 @@ cd we-mp-rss
 ```bash
 pip install -r requirements.txt
 ```
+----------------------------------
+如果本地没有安装`pipenv`，请先安装：
+```bash
+pip install pipenv
+```
+在 macOS 上，系统自带的 Python 3 对应的包管理器是 pip3
+pip 通常指向 Python 2 的包管理器（如果已安装）
+如果您想创建 pip 别名，可以在 ~/.zshrc 中添加：
+```bash
+alias pip=pip3
+```
+为了更好地管理项目依赖，推荐使用虚拟环境：
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 3. 配置数据库
 复制并修改配置文件：
@@ -144,6 +161,9 @@ yarn install
 ```
 
 2. 启动前端服务
+配置环境变量.env.development 
+涉及到后端api地址：VITE_API_BASE_URL
+确认无误后启动
 ```bash
 yarn dev
 ```

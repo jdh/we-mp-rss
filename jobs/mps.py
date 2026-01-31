@@ -77,6 +77,11 @@ def get_feeds(task:MessageTask=None):
         mps=wx_db.get_all_mps()
      return mps
 scheduler=TaskScheduler()
+
+def get_scheduler():
+    """获取全局调度器实例"""
+    return scheduler
+
 def reload_job():
     print_success("重载任务")
     scheduler.clear_all_jobs()
@@ -114,9 +119,15 @@ def start_job(job_id:str=None):
     scheduler.start()
     print("启动任务")
 def start_all_task():
-      #开启自动同步未同步 文章任务
+    # 开启自动同步未同步文章任务
     from jobs.fetch_no_article import start_sync_content
     start_sync_content()
+    
+    # 设置授权定时任务
+    from driver.auth import setup_auth_task
+    setup_auth_task(scheduler)
+    
+    # 启动主任务
     start_job()
 if __name__ == '__main__':
     # do_job()

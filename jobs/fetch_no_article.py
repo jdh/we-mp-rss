@@ -51,13 +51,13 @@ def fetch_articles_without_content():
         print(f"处理过程中发生错误: {e}")
     finally:
         Web.Close()
-from core.task import TaskScheduler
 from core.queue import TaskQueueManager
-scheduler=TaskScheduler()
-task_queue=TaskQueueManager()
-task_queue.run_task_background()
 from core.config import cfg
 from core.print import print_success,print_warning
+
+task_queue=TaskQueueManager()
+task_queue.run_task_background()
+
 def start_sync_content():
     """
     根据配置自动启动文章内容同步任务
@@ -65,8 +65,7 @@ def start_sync_content():
     功能：
     - 检查是否启用了自动同步功能
     - 根据配置的间隔时间设置定时任务
-    - 清除现有任务队列和调度器中的所有作业
-    - 添加新的定时同步任务并启动调度器
+    - 使用主调度器添加定时任务
     
     Args:
         无显式参数，从配置中读取以下设置：
@@ -82,14 +81,17 @@ def start_sync_content():
     if not cfg.get("gather.content_auto_check",False):
         print_warning("自动检查并同步文章内容功能未启用")
         return
+    
+    # 使用主调度器（从 mps.py 导入）
+    from jobs.mps import scheduler
+    
     interval=int(cfg.get("gather.content_auto_interval",10)) # 每隔多少分钟
     cron_exp=f"*/{interval} * * * *"
-    task_queue.clear_queue()
-    scheduler.clear_all_jobs()
+    
     def do_sync():
         task_queue.add_task(fetch_articles_without_content)
-    job_id=scheduler.add_cron_job(do_sync,cron_expr=cron_exp)
-    print_success(f"已添自动同步文章内容任务: {job_id}")
-    scheduler.start()
+    
+    job_id=scheduler.add_cron_job(do_sync, cron_expr=cron_exp, job_id="sync_content", tag="内容同步")
+    print_success(f"已添加自动同步文章内容任务: {job_id}")
 if __name__ == "__main__":
     fetch_articles_without_content()
