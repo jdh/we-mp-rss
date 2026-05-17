@@ -571,7 +571,7 @@ def get_prev_article(
                     message="当前文章不存在"
                 )
             )
-        
+
         # 查询发布时间更早的第一篇文章
         prev_article = session.query(Article)\
             .filter(Article.publish_time < current_article.publish_time)\
@@ -579,7 +579,7 @@ def get_prev_article(
             .filter(Article.mp_id == current_article.mp_id)\
             .order_by(Article.publish_time.desc())\
             .first()
-        
+
         if not prev_article:
             raise HTTPException(
                 status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
@@ -608,5 +608,56 @@ def get_prev_article(
             detail=error_response(
                 code=50001,
                 message=f"获取上一篇文章失败: {str(e)}"
+            )
+        )
+
+@router.get("/by-url/md", summary="通过URL获取markdown格式文章详情")
+def get_article_md_by_url(
+    url: str = Query(..., description="文章URL"),
+    add_title: bool = Query(True, description="是否添加文章标题"),
+    # current_user: dict = Depends(get_current_user_or_ak)
+):
+    session = DB.get_session()
+    try:
+        from core.content_format import format_content
+
+        # 通过URL查询文章
+        article = session.query(Article).filter(Article.url == url).filter(Article.status != DATA_STATUS.DELETED).first()
+        if not article:
+            raise HTTPException(
+                status_code=fast_status.HTTP_404_NOT_FOUND,
+                detail=error_response(
+                    code=40401,
+                    message="文章不存在"
+                )
+            )
+
+        # 同步文章内容
+        updated, _ = sync_article_content(
+            session=session,
+            article=article,
+            preferred_mode=cfg.get("gather.content_mode", "web"),
+        )
+
+        # 转换为markdown格式
+        markdown_content = format_content(article.content, "markdown")
+
+        # 添加标题
+        if add_title:
+            markdown_content = f"# {article.title}\n\n{markdown_content}"
+
+        from fastapi.responses import Response
+        return Response(
+            content=markdown_content,
+            media_type="text/markdown; charset=utf-8"
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
+            detail=error_response(
+                code=50001,
+                message=f"获取文章详情失败: {str(e)}"
             )
         )
