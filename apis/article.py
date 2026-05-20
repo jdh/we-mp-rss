@@ -620,44 +620,53 @@ def get_article_md_by_url(
     session = DB.get_session()
     try:
         from core.content_format import format_content
+        from core.article_content import fetch_article_content
+
+        title = ""
+        html_content = ""
 
         # 通过URL查询文章
         article = session.query(Article).filter(Article.url == url).filter(Article.status != DATA_STATUS.DELETED).first()
-        if not article:
-            raise HTTPException(
-                status_code=fast_status.HTTP_404_NOT_FOUND,
-                detail=error_response(
-                    code=40401,
-                    message="文章不存在"
-                )
-            )
+        if article:
+            title = article.title or ""
+            # 优先使用已有的内容
+            if article.content and article.content.strip():
+                html_content = article.content
+            else:
+                # 尝试同步内容
+                try:
+                    sync_success, sync_mode = sync_article_content(
+                        session=session,
+                        article=article,
+                        preferred_mode=str(cfg.get("gather.content_mode", "web")),
+                    )
+                    if article.content and article.content.strip():
+                        html_content = article.content
+                except Exception:
+                    pass
 
-        # 同步文章内容
-        updated, _ = sync_article_content(
-            session=session,
-            article=article,
-            preferred_mode=cfg.get("gather.content_mode", "web"),
-        )
+        # 如果还没有内容，直接通过URL抓取
+        if not html_content:
+            try:
+                html_content, _ = fetch_article_content(url, str(cfg.get("gather.content_mode", "web")))
+            except Exception:
+                pass
 
         # 转换为markdown格式
-        markdown_content = format_content(article.content, "markdown")
+        markdown_content = format_content(html_content, "markdown") or ""
 
-        # 添加标题
-        if add_title:
-            markdown_content = f"# {article.title}\n\n{markdown_content}"
+        # 添加标题（如果有内容）
+        if add_title and markdown_content.strip() and title:
+            markdown_content = f"# {title}\n\n{markdown_content}"
 
         from fastapi.responses import Response
         return Response(
             content=markdown_content,
             media_type="text/markdown; charset=utf-8"
         )
-    except HTTPException as e:
-        raise e
     except Exception as e:
-        raise HTTPException(
-            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
-            detail=error_response(
-                code=50001,
-                message=f"获取文章详情失败: {str(e)}"
-            )
+        from fastapi.responses import Response
+        return Response(
+            content="",
+            media_type="text/markdown; charset=utf-8"
         )
