@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any, Tuple, Optional
 
 from core.config import cfg
 from core.models.base import DATA_STATUS
 from core.print import print_info, print_warning
 
 
-def normalize_content_mode(mode: str | None = None) -> str:
+def normalize_content_mode(mode: Optional[str] = None) -> str:
     normalized = (mode or cfg.get("gather.content_mode", "web") or "web").strip().lower()
     if normalized not in {"web", "api"}:
         return "web"
     return normalized
 
 
-def extract_origin_article_id(article_id: str, mp_id: str | None = None) -> str:
+def extract_origin_article_id(article_id: str, mp_id: Optional[str] = None) -> str:
     if not article_id:
         return ""
 
@@ -82,7 +82,7 @@ def fetch_article_content(url: str, preferred_mode: str | None = None) -> Tuple[
 def sync_article_content(
     session,
     article: Any,
-    preferred_mode: str | None = None,
+    preferred_mode: Optional[str] = None,
     force: bool = False,
 ) -> Tuple[bool, str]:
     existing_content = (getattr(article, "content", "") or "").strip()

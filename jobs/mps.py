@@ -275,6 +275,11 @@ def start_job(job_id:str=None):
         # 修改：使用关键字参数传递 task，避免与 feeds 混淆
         job_id=scheduler.add_cron_job(add_job,cron_expr=cron_exp,kwargs={'task': task},job_id=str(task.id),tag="定时采集")
         print(f"已添加任务: {job_id}")
+
+    # 注册 skill 系统的定时任务
+    from jobs import register_skill_jobs
+    register_skill_jobs(scheduler)
+
     scheduler.start()
     print("启动任务")
 def start_fix_article():

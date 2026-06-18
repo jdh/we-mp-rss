@@ -86,13 +86,26 @@ class Db:
             if "articles" not in inspector.get_table_names(): # type: ignore
                 return
 
-            columns = {column["name"] for column in inspector.get_columns("articles")} # type: ignore
+            all_columns = inspector.get_columns("articles")  # type: ignore
+            column_names = {c["name"] for c in all_columns}
+            column_map = {c["name"]: c for c in all_columns}
             alter_statements = []
-            if "is_favorite" not in columns:
+            if "is_favorite" not in column_names:
                 alter_statements.append("ALTER TABLE articles ADD COLUMN is_favorite INTEGER DEFAULT 0")
 
-            if "has_content" not in columns:
+            if "has_content" not in column_names:
                 alter_statements.append("ALTER TABLE articles ADD COLUMN has_content INTEGER DEFAULT 0")
+            # 迁移 updated_at: DATETIME -> BIGINT
+            updated_at_col = column_map.get("updated_at")
+            if updated_at_col and str(updated_at_col.get("type", "")).upper().startswith("DATE"):
+                if self.connection_str and self.connection_str.startswith("sqlite"):
+                    print_warning(f"[{self.tag}] SQLite 不支持直接修改列类型，请手动迁移 updated_at 为 INTEGER")
+                else:
+                    alter_statements.append("ALTER TABLE articles MODIFY COLUMN updated_at BIGINT")
+
+            # 添加 updated_at_millis 列（若不存在）
+            if "updated_at_millis" not in column_names:
+                alter_statements.append("ALTER TABLE articles ADD COLUMN updated_at_millis BIGINT")
 
             if not alter_statements:
                 return

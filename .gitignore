@@ -4,9 +4,6 @@ __pycache__
 config.yaml
 dist/
 build/
-static/anti_bot*
-static/test.html
-static/fix.html
 *.pyc
 dock_build.bat
 ./db.db
@@ -25,6 +22,7 @@ demo.txt
 test.yaml
 .venv
 .idea
-.travis
+.trae
 test.py
-.codeartsdoer
+.opencode
+.claude
