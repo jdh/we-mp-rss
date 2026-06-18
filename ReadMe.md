@@ -5,7 +5,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.13.1+-red.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
-[中文](README.zh-CN.md)|[English](ReadMe.md)
+[中文](README.zh-CN.md)|[English](ReadMe.md)|[Docker部署指南](DEPLOY.md)
 
 Quick Start
 ```

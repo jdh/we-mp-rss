@@ -12,6 +12,11 @@ if __name__ == '__main__':
         import init_sys as init
         init.init()
     start_auth_service()
+
+    # 初始化 Skill 系统
+    from skills import SkillRegistry
+    SkillRegistry.discover()
+    SkillRegistry.load_enabled(cfg.get("skills", {}))
     # 启动级联同步服务（如果配置为子节点）
     cascade_service_started = False
     if cfg.get("cascade.enabled", False) and cfg.get("cascade.node_type") == "child":
